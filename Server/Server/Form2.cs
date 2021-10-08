@@ -18,11 +18,12 @@ namespace Server
         static IPAddress remoteAddress; // хост для отправки данных
         static Socket sendSocket;
         static IPAddress sendAdress;
-        static IPEndPoint sendEndPoint;
-        //порты для получения и отправки данных
 
-        private const int listenPort = 11000;
-        private const int sendPort = 11100;
+        static IPEndPoint serverEndPoint;
+
+        static DiscoveryClient client;
+        static UdpClient clientUDP;
+        private const int port = 1010;
         string login, operation;
         int ch1, ch2;
         public string Login
@@ -37,20 +38,20 @@ namespace Server
             }
         }
 
-        private static string LocalIPAddress()
-        {
-            string localIP = "";
-            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
-            {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    localIP = ip.ToString();
-                    break;
-                }
-            }
-            return localIP;
-        }
+        //private static string LocalIPAddress()
+        //{
+        //    string localIP = "";
+        //    IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+        //    foreach (IPAddress ip in host.AddressList)
+        //    {
+        //        if (ip.AddressFamily == AddressFamily.InterNetwork)
+        //        {
+        //            localIP = ip.ToString();
+        //            break;
+        //        }
+        //    }
+        //    return localIP;
+        //}
 
         private void radioButton4_CheckedChanged(object sender, EventArgs e)
         {
@@ -103,25 +104,30 @@ namespace Server
                     || groupBox2.Visible == false)
                 {
                     textBoxResult.Text = "";
-                    sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    sendAdress = IPAddress.Loopback;
-                    sendEndPoint = new IPEndPoint(sendAdress, sendPort);
+                    string message = login + ";" + operation + ";";
+                    if (operation != "stop")
+                    {
+                        message += ch1.ToString() + ";";
+                        if (operation != "!")
+                            message += ch2.ToString() + ";";
+                    }
+                    byte[] data = Encoding.Unicode.GetBytes(message);
+                    
+
+                    //sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                    //sendAdress = IPAddress.Loopback;
+                    //sendEndPoint = new IPEndPoint(sendAdress, sendPort);
 
                     try
                     {
                         // запускаем новый поток для получения данных
                         Thread receiveThread = new Thread(new ThreadStart(ReceiveMessage));
                         receiveThread.Start(); //старт потока
-                        SendMessage();
+                        clientUDP.Send(data, data.Length, serverEndPoint);
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show(ex.Message);
-                    }
-                    finally
-                    {
-                        //sendSocket.Close();
-                        sendSocket.Dispose();
                     }
                 }
             }
@@ -130,34 +136,35 @@ namespace Server
         }
 
         // отправка сообщений
-        private void SendMessage()
-        {
-            while (true)
-            {
-                //sendSocket.EnableBroadcast = true;
-                string message = login + ";" + operation + ";";
-                if (operation != "stop")
-                {
-                    message += ch1.ToString() + ";";
-                    if (operation != "!")
-                        message += ch2.ToString() + ";";
-                }
+        //private void SendMessage()
+        //{
+        //    while (true)
+        //    {
+        //        //sendSocket.EnableBroadcast = true;
+        //        string message = login + ";" + operation + ";";
+        //        if (operation != "stop")
+        //        {
+        //            message += ch1.ToString() + ";";
+        //            if (operation != "!")
+        //                message += ch2.ToString() + ";";
+        //        }
                 
-                byte[] data = Encoding.Unicode.GetBytes(message);
-                try
-                {
-                    sendSocket.SendTo(data, sendEndPoint);
-                }
-                catch (SocketException ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-                finally
-                {
-                    sendSocket.Close();
-                }
-            }
-        }
+        //        byte[] data = Encoding.Unicode.GetBytes(message);
+        //        try
+        //        {
+        //            //sendSocket.SendTo(data, sendEndPoint);
+                    
+        //        }
+        //        catch (SocketException ex)
+        //        {
+        //            MessageBox.Show(ex.Message);
+        //        }
+        //        //finally
+        //        //{
+        //        //    sendSocket.Close();
+        //        //}
+        //    }
+        //}
 
         private void radioButton5_CheckedChanged(object sender, EventArgs e)
         {
@@ -172,36 +179,46 @@ namespace Server
             }
         }
 
+        private void Form2_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            client.StopDiscovery();
+        }
+
         private void ReceiveMessage()
-           {
-            UdpClient receiver = new UdpClient(listenPort);
-            //ответ можно получить от любого айпишника
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, listenPort);
-            string localAddress = LocalIPAddress();
+        {
+            //UdpClient receiver = new UdpClient(listenPort);
+            ////ответ можно получить от любого айпишника
+            //IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, listenPort);
+            //string localAddress = LocalIPAddress();
 
             try
             {
                 while (true)
                 {
-                    byte[] data = receiver.Receive(ref endPoint);
-                    if (endPoint.Address.ToString().Equals(localAddress))
-                        continue;
-                    textBoxResult.Text = Encoding.Unicode.GetString(data);
+                    var endPoint = new IPEndPoint(IPAddress.Any, port);
+                    byte[] data = clientUDP.Receive(ref endPoint);
+                    if (endPoint == serverEndPoint)
+                        textBoxResult.Text = Encoding.Unicode.GetString(data);
                 }
             }
             catch (SocketException ex)
             {
                 MessageBox.Show(ex.Message);
             }
-            finally
-            {
-                receiver.Close();
-            }
         }
 
         public Form2()
         {
             InitializeComponent();
+            client = new DiscoveryClient(Guid.NewGuid().ToString(), port);
+            client.StartDiscovery();
+            client.ClientFound += this.OnServerFound;
+            clientUDP = new UdpClient();
+        }
+
+        private void OnServerFound(IPEndPoint endPoint)
+        {
+            serverEndPoint = endPoint;
         }
     }
 }
