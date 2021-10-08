@@ -15,10 +15,6 @@ namespace Server
 {
     public partial class Form2 : Form
     {
-        static IPAddress remoteAddress; // хост для отправки данных
-        static Socket sendSocket;
-        static IPAddress sendAdress;
-
         static IPEndPoint serverEndPoint;
 
         static DiscoveryClient client;
@@ -218,7 +214,7 @@ namespace Server
 
         private void OnServerFound(IPEndPoint endPoint)
         {
-            serverEndPoint = endPoint;
+            serverEndPoint = new IPEndPoint(endPoint.Address, port);
         }
     }
 }

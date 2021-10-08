@@ -25,7 +25,7 @@ namespace Server
         {
             _clientName = clientName;
             _broadcastPort = broadcastPort;
-            _client = new UdpClient(broadcastPort) { EnableBroadcast = true, ExclusiveAddressUse = true };
+            _client = new UdpClient(broadcastPort) { EnableBroadcast = true };
             _sync = SynchronizationContext.Current ?? new SynchronizationContext();
         }
 
@@ -36,7 +36,7 @@ namespace Server
         /// <param name="discover">Block discovery of network clients</param>
         public void StartDiscovery(bool revealSelf = true, bool discover = true)
         {
-            if (!_token.IsCancellationRequested)
+            if ( !_token?.IsCancellationRequested ?? false)
                 StopDiscovery();
 
             if (!revealSelf && !discover)
