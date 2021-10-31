@@ -19,7 +19,10 @@ namespace Server
 
         static DiscoveryClient client;
         static UdpClient clientUDP;
-        private const int port = 1010;
+        private const int listenPortBC = 1111;
+        private const int sendPortBC = 1010;
+        private const int listenPort = 8888;
+        private const int sendPort = 8080;
         string login, operation;
         int ch1, ch2;
         public string Login
@@ -33,21 +36,6 @@ namespace Server
                 return login;
             }
         }
-
-        //private static string LocalIPAddress()
-        //{
-        //    string localIP = "";
-        //    IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-        //    foreach (IPAddress ip in host.AddressList)
-        //    {
-        //        if (ip.AddressFamily == AddressFamily.InterNetwork)
-        //        {
-        //            localIP = ip.ToString();
-        //            break;
-        //        }
-        //    }
-        //    return localIP;
-        //}
 
         private void radioButton4_CheckedChanged(object sender, EventArgs e)
         {
@@ -109,11 +97,6 @@ namespace Server
                     }
                     byte[] data = Encoding.Unicode.GetBytes(message);
                     
-
-                    //sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    //sendAdress = IPAddress.Loopback;
-                    //sendEndPoint = new IPEndPoint(sendAdress, sendPort);
-
                     try
                     {
                         // запускаем новый поток для получения данных
@@ -130,37 +113,6 @@ namespace Server
             else
                 MessageBox.Show("Можно вводить только целые числа!");
         }
-
-        // отправка сообщений
-        //private void SendMessage()
-        //{
-        //    while (true)
-        //    {
-        //        //sendSocket.EnableBroadcast = true;
-        //        string message = login + ";" + operation + ";";
-        //        if (operation != "stop")
-        //        {
-        //            message += ch1.ToString() + ";";
-        //            if (operation != "!")
-        //                message += ch2.ToString() + ";";
-        //        }
-                
-        //        byte[] data = Encoding.Unicode.GetBytes(message);
-        //        try
-        //        {
-        //            //sendSocket.SendTo(data, sendEndPoint);
-                    
-        //        }
-        //        catch (SocketException ex)
-        //        {
-        //            MessageBox.Show(ex.Message);
-        //        }
-        //        //finally
-        //        //{
-        //        //    sendSocket.Close();
-        //        //}
-        //    }
-        //}
 
         private void radioButton5_CheckedChanged(object sender, EventArgs e)
         {
@@ -182,16 +134,11 @@ namespace Server
 
         private void ReceiveMessage()
         {
-            //UdpClient receiver = new UdpClient(listenPort);
-            ////ответ можно получить от любого айпишника
-            //IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, listenPort);
-            //string localAddress = LocalIPAddress();
-
             try
             {
                 while (true)
                 {
-                    var endPoint = new IPEndPoint(IPAddress.Any, port);
+                    var endPoint = new IPEndPoint(IPAddress.Any, listenPort); //8888 
                     byte[] data = clientUDP.Receive(ref endPoint);
                     if (endPoint == serverEndPoint)
                         textBoxResult.Text = Encoding.Unicode.GetString(data);
@@ -206,15 +153,15 @@ namespace Server
         public Form2()
         {
             InitializeComponent();
-            client = new DiscoveryClient(Guid.NewGuid().ToString(), port);
-            client.StartDiscovery();
+            client = new DiscoveryClient(Guid.NewGuid().ToString(), listenPortBC, sendPortBC);//1111 и 1010
+            client.StartDiscovery(revealSelf: false, discover:true);
             client.ClientFound += this.OnServerFound;
-            clientUDP = new UdpClient();
+            clientUDP = new UdpClient(listenPort);//8888
         }
 
         private void OnServerFound(IPEndPoint endPoint)
         {
-            serverEndPoint = new IPEndPoint(endPoint.Address, port);
+            serverEndPoint = new IPEndPoint(endPoint.Address, sendPort);//8080
         }
     }
 }
