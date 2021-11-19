@@ -19,7 +19,7 @@ namespace Server
         public const int SendPortBroadCast = 1010;
         public const int ListenPort = 8888;
         public const int SendPort = 8080;
-        
+
         private UdpClient clientUDP;
         string operation;
         int ch1, ch2;
@@ -36,7 +36,7 @@ namespace Server
 
         private void Form2_Load(object sender, EventArgs e)
         {
-            clientUDP = new UdpClient(ListenPort); // fix: должен быть использован динамический порт
+            clientUDP = new UdpClient(0);
             Task.Factory.StartNew(ReceiveMessage);
         }
 
