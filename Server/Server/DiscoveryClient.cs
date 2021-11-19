@@ -31,7 +31,8 @@ namespace Server
             _clientName = clientName;
             _sendBroadcastPort = sendBroadcastPort;
             _blockLocalhostDiscovery = receiveBroadcastPort == sendBroadcastPort;
-            _client = new UdpClient(receiveBroadcastPort) { EnableBroadcast = true };
+            _client = new UdpClient(receiveBroadcastPort) { EnableBroadcast = true};
+            _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _sync = SynchronizationContext.Current ?? new SynchronizationContext();
             _networkAddress = GetNetworkAddress();
         }
