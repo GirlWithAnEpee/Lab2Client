@@ -29,7 +29,8 @@ namespace Server
         {
             _sendBroadcastPort = sendBroadcastPort;
             _binaryFormatter = new BinaryFormatter();
-            _client = new UdpClient() {EnableBroadcast = true};
+            // 0 - занимает любой свободный порт
+            _client = new UdpClient(0) {EnableBroadcast = true};
             _sync = SynchronizationContext.Current ?? new SynchronizationContext();
             BroadcastPort = ((IPEndPoint) _client.Client.LocalEndPoint).Port;
             _networkAddress = GetNetworkAddress();
