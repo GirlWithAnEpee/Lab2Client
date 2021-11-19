@@ -37,7 +37,6 @@ namespace Server
         private void Form2_Load(object sender, EventArgs e)
         {
             clientUDP = new UdpClient(ListenPort); // fix: должен быть использован динамический порт
-            clientUDP.Connect(_serverEndPoint);
             Task.Factory.StartNew(ReceiveMessage);
         }
 
