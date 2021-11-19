@@ -14,28 +14,25 @@ namespace Server
     {
         public event Action<IPEndPoint, BroadcastData> ClientFound;
 
+        public BroadcastData DiscoveryData { get; private set; }
         public int BroadcastInterval { get; set; } = 300;
 
         private readonly UdpClient _client;
         private readonly SynchronizationContext _sync;
-        private readonly string _name;
-        private readonly int _sendBroadcastPort;
-        private readonly bool _blockLocalhostDiscovery;
         private readonly IPAddress _networkAddress;
-        private CancellationTokenSource _token;
-        private BinaryFormatter _binaryFormatter;
-        private BroadcastData _discoveryData;
+        private readonly BinaryFormatter _binaryFormatter;
 
-        public BroadcastServer(string serverName, int receiveBroadcastPort)
+        private CancellationTokenSource _token;
+
+        public BroadcastServer(BroadcastData discoveryData, int receiveBroadcastPort)
         {
-            _name = serverName;
+            DiscoveryData = discoveryData;
             _client = new UdpClient(receiveBroadcastPort) {EnableBroadcast = true};
 
             // _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _sync = SynchronizationContext.Current ?? new SynchronizationContext();
             _binaryFormatter = new BinaryFormatter();
             _networkAddress = GetNetworkAddress();
-            _discoveryData = GetDiscoveryData();
         }
 
         /// <summary>
@@ -43,8 +40,9 @@ namespace Server
         /// </summary>
         /// <param name="revealSelf">Block self discovery</param>
         /// <param name="discover">Block discovery of network clients</param>
-        public void StartDiscovery()
+        public void StartDiscovery(BroadcastData data)
         {
+            DiscoveryData = data;
             if (!_token?.IsCancellationRequested ?? false)
                 StopDiscovery();
 
@@ -66,11 +64,8 @@ namespace Server
                 BroadcastData data = DeserializeData(serverResponse);
                 if (data == null) continue;
 
-                if (_blockLocalhostDiscovery && (Equals(endPoint.Address, IPAddress.Loopback) || Equals(endPoint.Address, _networkAddress)))
-                    continue;
-
                 OnClientFound(endPoint, data);
-                ReplyClient(endPoint, _discoveryData);
+                ReplyClient(endPoint, DiscoveryData);
             }
         }
 
@@ -104,11 +99,5 @@ namespace Server
             Dns.GetHostEntry(Dns.GetHostName())
                 .AddressList
                 .First(ip => ip.AddressFamily == AddressFamily.InterNetwork);
-
-        private BroadcastData GetDiscoveryData()
-        {
-            int port = ((IPEndPoint) _client.Client.LocalEndPoint).Port;
-            return new BroadcastData(port) {Name = _name};
-        }
     }
 }
