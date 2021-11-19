@@ -38,12 +38,14 @@ namespace Server
                 BroadcastPort = _client.BroadcastPort,
                 Name = Guid.NewGuid().ToString()
             };
+            _client.ServerFound += OnServerFound;
             _client.StartDiscovery(data);
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             _client.StopDiscovery();
+            Application.Exit();
         }
 
         private void buttonOK_Click(object sender, EventArgs e)
