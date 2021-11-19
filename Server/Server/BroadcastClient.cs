@@ -14,52 +14,38 @@ namespace Server
     {
         public event Action<IPEndPoint, BroadcastData> ServerFound;
 
+        public BroadcastData DiscoveryData { get; private set; }
         public int BroadcastInterval { get; set; } = 300;
+        public int BroadcastPort { get; }
 
         private readonly UdpClient _client;
         private readonly SynchronizationContext _sync;
-        private readonly string _name;
         private readonly int _sendBroadcastPort;
-        private readonly bool _blockLocalhostDiscovery;
         private readonly IPAddress _networkAddress;
+        private readonly BinaryFormatter _binaryFormatter;
         private CancellationTokenSource _token;
-        private BinaryFormatter _binaryFormatter;
-        private BroadcastData _discoveryData;
 
-
-        public BroadcastClient(string name, int receiveBroadcastPort, int sendBroadcastPort)
+        public BroadcastClient(int sendBroadcastPort)
         {
-            _name = name;
             _sendBroadcastPort = sendBroadcastPort;
-            _blockLocalhostDiscovery = receiveBroadcastPort == sendBroadcastPort;
-            _client = new UdpClient(receiveBroadcastPort) {EnableBroadcast = true};
-            // _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _sync = SynchronizationContext.Current ?? new SynchronizationContext();
             _binaryFormatter = new BinaryFormatter();
+            _client = new UdpClient() {EnableBroadcast = true};
+            _sync = SynchronizationContext.Current ?? new SynchronizationContext();
+            BroadcastPort = ((IPEndPoint) _client.Client.LocalEndPoint).Port;
             _networkAddress = GetNetworkAddress();
-            _discoveryData = GetDiscoveryData();
-        }
-
-        public BroadcastClient(string name, int receiveBroadcastPort)
-            : this(name, receiveBroadcastPort, receiveBroadcastPort)
-        {
         }
 
         /// <summary>
         /// Starts discovery in background thread
         /// </summary>
-        /// <param name="revealSelf">Block self discovery</param>
-        /// <param name="discover">Block discovery of network clients</param>
-        public void StartDiscovery(bool revealSelf = true, bool discover = true)
+        /// <param name="data"></param>
+        public void StartDiscovery(BroadcastData data)
         {
+            DiscoveryData = data;
             if (!_token?.IsCancellationRequested ?? false)
                 StopDiscovery();
 
-            if (!revealSelf && !discover)
-                throw new ArgumentException("Two-way discovery blocked", nameof(discover));
-
             _token = new CancellationTokenSource();
-
             Task.Factory.StartNew(() => BroadCast(_token.Token), _token.Token);
             Task.Factory.StartNew(() => ReceiveBroadcast(_token.Token), _token.Token);
         }
@@ -69,7 +55,7 @@ namespace Server
 
         private void BroadCast(CancellationToken token)
         {
-            byte[] broadCastMessage = SerializeData(_discoveryData);
+            byte[] broadCastMessage = SerializeData(DiscoveryData);
             IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, _sendBroadcastPort);
             while (!token.IsCancellationRequested)
             {
@@ -86,10 +72,6 @@ namespace Server
                 byte[] serverResponse = _client.Receive(ref endPoint);
                 BroadcastData data = DeserializeData(serverResponse);
                 if (data == null) continue;
-
-                if (_blockLocalhostDiscovery && (Equals(endPoint.Address, IPAddress.Loopback) || Equals(endPoint.Address, _networkAddress)))
-                    continue;
-
                 OnServerFound(endPoint, data);
             }
         }
@@ -97,12 +79,6 @@ namespace Server
         private void OnServerFound(IPEndPoint ip, BroadcastData data) =>
             //"?" нужен, чтобы при отсутствии подписчиков на данное событие ничего не происходило
             _sync.Post((_) => { ServerFound?.Invoke(ip, data); }, null);
-
-        private BroadcastData GetDiscoveryData()
-        {
-            int port = ((IPEndPoint) _client.Client.LocalEndPoint).Port;
-            return new BroadcastData(port) {Name = _name};
-        }
 
         private static IPAddress GetNetworkAddress() =>
             Dns.GetHostEntry(Dns.GetHostName())
