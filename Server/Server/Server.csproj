@@ -46,7 +46,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BroadcastClient.cs" />
     <Compile Include="DiscoveryNode.cs" />
+    <Compile Include="BroadcastData.cs" />
+    <Compile Include="BroadcastServer.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

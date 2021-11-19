@@ -126,7 +126,7 @@ namespace Server
             {
                 while (true)
                 {
-                    var endPoint = new IPEndPoint(IPAddress.Any, listenPort); //8888 
+                    var endPoint = new IPEndPoint(IPAddress.Any, listenPort); //8888
                     byte[] data = clientUDP.Receive(ref endPoint);
                     if (endPoint.Equals(serverEndPoint))
                     {
@@ -144,7 +144,7 @@ namespace Server
         private void displayResult(string result) =>
             textBoxResult.Text = result;
 
-        private void OnServerFound(IPEndPoint endPoint)
+        private void OnServerFound(IPEndPoint endPoint, BroadcastData data)
         {
             // отписываю метод, чтобы он отработал Единожды
             _node.ClientFound -= this.OnServerFound;
