@@ -16,6 +16,8 @@ namespace Server
     {
         public const int ListenPortBroadCast = 1111;
         public const int SendPortBroadCast = 1010;
+        public const int ListenPort = 8888;
+        public const int SendPort = 8080;
         public string Login { set; get; } = "";
 
         private BroadcastClient _client;
@@ -29,7 +31,14 @@ namespace Server
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _client = new BroadcastClient(Guid.NewGuid().ToString(), ListenPortBroadCast);
+            _client = new BroadcastClient(SendPortBroadCast);
+            var data = new BroadcastData()
+            {
+                CommunicationPort = ListenPort,
+                BroadcastPort = _client.BroadcastPort,
+                Name = Guid.NewGuid().ToString()
+            };
+            _client.StartDiscovery(data);
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -60,7 +69,7 @@ namespace Server
 
         private void OnServerFound(IPEndPoint endPoint, BroadcastData data)
         {
-            _serverEndPoint = new IPEndPoint(endPoint.Address, data.Port);
+            _serverEndPoint = new IPEndPoint(endPoint.Address, data.CommunicationPort);
 
             // отписываю метод, чтобы он отработал Единожды
             _client.ServerFound -= this.OnServerFound;
