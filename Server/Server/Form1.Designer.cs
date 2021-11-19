@@ -24,8 +24,8 @@ namespace Server
         #region Код, автоматически созданный конструктором форм Windows
 
         /// <summary>
-        /// Требуемый метод для поддержки конструктора — не изменяйте 
-        /// содержимое этого метода с помощью редактора кода.
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
         {
@@ -71,16 +71,17 @@ namespace Server
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.Text = "Авторизация";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
-
-        #endregion
 
         private System.Windows.Forms.Button buttonOK;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textBoxLogin;
+
+        #endregion
     }
 }
 

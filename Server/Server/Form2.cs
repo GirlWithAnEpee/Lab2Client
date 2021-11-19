@@ -15,19 +15,17 @@ namespace Server
 {
     public partial class Form2 : Form
     {
-        static IPEndPoint serverEndPoint;
-        static DiscoveryNode _node;
-        static UdpClient clientUDP;
-        private const int listenPortBC = 1111;
-        private const int sendPortBC = 1010;
         private const int listenPort = 8888;
         private const int sendPort = 8080;
+        
+        private UdpClient clientUDP;
         string operation;
         int ch1, ch2;
+        private IPEndPoint _serverEndPoint;
 
         public string Login { set; get; }
 
-        public Form2()
+        public Form2(IPEndPoint serverEndPoint)
         {
             InitializeComponent();
             _node = new DiscoveryNode(Guid.NewGuid().ToString(), listenPortBC, sendPortBC); //1111 и 1010
