@@ -16,7 +16,7 @@ namespace Server
     public partial class Form2 : Form
     {
         static IPEndPoint serverEndPoint;
-        static DiscoveryClient client;
+        static DiscoveryNode _node;
         static UdpClient clientUDP;
         private const int listenPortBC = 1111;
         private const int sendPortBC = 1010;
@@ -30,14 +30,14 @@ namespace Server
         public Form2()
         {
             InitializeComponent();
-            client = new DiscoveryClient(Guid.NewGuid().ToString(), listenPortBC, sendPortBC);//1111 и 1010
-            client.ClientFound += this.OnServerFound;
-            client.StartDiscovery(revealSelf: false, discover: true);
+            _node = new DiscoveryNode(Guid.NewGuid().ToString(), listenPortBC, sendPortBC); //1111 и 1010
+            _node.ClientFound += this.OnServerFound;
+            _node.StartDiscovery(revealSelf: false, discover: true);
             operation = "+";
         }
 
         private void Form2_FormClosing(object sender, FormClosingEventArgs e) =>
-            client.StopDiscovery();
+            _node.StopDiscovery();
 
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e)
@@ -57,6 +57,7 @@ namespace Server
             if (radioButton3.Checked)
                 operation = "*";
         }
+
         private void radioButton4_CheckedChanged(object sender, EventArgs e)
         {
             if (radioButton4.Checked)
@@ -92,7 +93,7 @@ namespace Server
             if (int.TryParse(textBox1.Text, out ch1) || groupBox2.Visible == false)
             {
                 if ((textBox2.Visible == true && int.TryParse(textBox2.Text, out ch2)) || textBox2.Visible == false
-                    || groupBox2.Visible == false)
+                                                                                       || groupBox2.Visible == false)
                 {
                     textBoxResult.Text = "";
                     string message = Login + ";" + operation + ";";
@@ -102,6 +103,7 @@ namespace Server
                         if (operation != "!")
                             message += ch2.ToString() + ";";
                     }
+
                     byte[] data = Encoding.Unicode.GetBytes(message);
 
                     try
@@ -129,9 +131,8 @@ namespace Server
                     if (endPoint.Equals(serverEndPoint))
                     {
                         var result = Encoding.Unicode.GetString(data);
-                        textBoxResult.Invoke((MethodInvoker)(() => displayResult(result)));
+                        textBoxResult.Invoke((MethodInvoker) (() => displayResult(result)));
                     }
-
                 }
             }
             catch (SocketException ex)
@@ -146,14 +147,12 @@ namespace Server
         private void OnServerFound(IPEndPoint endPoint)
         {
             // отписываю метод, чтобы он отработал Единожды
-            client.ClientFound -= this.OnServerFound;
+            _node.ClientFound -= this.OnServerFound;
 
-            serverEndPoint = new IPEndPoint(endPoint.Address, sendPort);//8080
-            clientUDP = new UdpClient(listenPort);//8888
+            serverEndPoint = new IPEndPoint(endPoint.Address, sendPort); //8080
+            clientUDP = new UdpClient(listenPort); //8888
             // запускаем новый поток для получения данных
             Task.Factory.StartNew(ReceiveMessage);
         }
     }
 }
-
-

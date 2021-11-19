@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Server
 {
-    internal class DiscoveryClient
+    internal class DiscoveryNode
     {
         public event Action<IPEndPoint> ClientFound;
 
@@ -17,7 +17,7 @@ namespace Server
 
         private readonly UdpClient _client;
         private readonly SynchronizationContext _sync;
-        private readonly string _clientName;
+        private readonly string _name;
         private readonly int _sendBroadcastPort;
         private readonly int _receiveBroadcastPort;
         private readonly bool _blockLocalhostDiscovery;
@@ -25,20 +25,20 @@ namespace Server
         private CancellationTokenSource _token;
 
 
-        public DiscoveryClient(string clientName, int receiveBroadcastPort, int sendBroadcastPort)
+        public DiscoveryNode(string name, int receiveBroadcastPort, int sendBroadcastPort)
         {
             _receiveBroadcastPort = receiveBroadcastPort;
-            _clientName = clientName;
+            _name = name;
             _sendBroadcastPort = sendBroadcastPort;
             _blockLocalhostDiscovery = receiveBroadcastPort == sendBroadcastPort;
             _client = new UdpClient(receiveBroadcastPort) { EnableBroadcast = true};
-            _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            // _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _sync = SynchronizationContext.Current ?? new SynchronizationContext();
             _networkAddress = GetNetworkAddress();
         }
 
-        public DiscoveryClient(string clientName, int receiveBroadcastPort)
-            : this(clientName, receiveBroadcastPort, receiveBroadcastPort)
+        public DiscoveryNode(string name, int receiveBroadcastPort)
+            : this(name, receiveBroadcastPort, receiveBroadcastPort)
         {
         }
 
@@ -68,7 +68,7 @@ namespace Server
 
         private void BroadCast(CancellationToken token)
         {
-            byte[] broadCastMessage = Encoding.UTF8.GetBytes(_clientName);
+            byte[] broadCastMessage = Encoding.UTF8.GetBytes(_name);
             while (!token.IsCancellationRequested)
             {
                 _client.Send(broadCastMessage, broadCastMessage.Length, new IPEndPoint(IPAddress.Broadcast, _sendBroadcastPort));
