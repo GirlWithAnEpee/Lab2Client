@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Threading;
+using Server;
 
 namespace SimpleServer
 {
@@ -15,21 +16,27 @@ namespace SimpleServer
         private const int sendPort = 8888;
         private const int listenPortBC = 1010;
         private const int sendPortBC = 1111;
-        static DiscoveryClient client;
+        static BroadcastServer server;
         static IPEndPoint endPoint;
         static UdpClient listener;
         static byte[] data;
         static List<string> logins = new List<string>();
         private static Scheduler _scheduler;
         private static bool isStopped = false;
-
+        private static BroadcastData discoveryData;
 
         static void Main(string[] args)
         {
             listener = new UdpClient(listenPort);
             endPoint = new IPEndPoint(IPAddress.Any, sendPort);
-            client = new DiscoveryClient(Guid.NewGuid().ToString(), listenPortBC, sendPortBC);//1010 и 1111
-            client.StartDiscovery(revealSelf: true, discover: false);
+            discoveryData = new BroadcastData()
+            {
+                BroadcastPort = listenPortBC,
+                CommunicationPort = listenPort,
+                Name = "My server"
+            };
+            server = new BroadcastServer(listenPortBC);
+            server.StartDiscovery(discoveryData);
 
             ReadLogins("logins.txt");
             LoginService loginService = new LoginService(logins);
