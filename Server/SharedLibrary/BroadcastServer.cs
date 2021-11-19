@@ -24,9 +24,8 @@ namespace Server
 
         private CancellationTokenSource _token;
 
-        public BroadcastServer(BroadcastData discoveryData, int receiveBroadcastPort)
+        public BroadcastServer(int receiveBroadcastPort)
         {
-            DiscoveryData = discoveryData;
             _client = new UdpClient(receiveBroadcastPort) {EnableBroadcast = true};
 
             // _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
