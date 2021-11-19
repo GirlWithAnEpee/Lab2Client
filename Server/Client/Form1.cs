@@ -31,10 +31,10 @@ namespace Server
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            
             _client = new BroadcastClient(SendPortBroadCast);
             var data = new BroadcastData()
             {
-                CommunicationPort = ListenPort,
                 BroadcastPort = _client.BroadcastPort,
                 Name = Guid.NewGuid().ToString()
             };
